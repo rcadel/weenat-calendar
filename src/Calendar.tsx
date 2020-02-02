@@ -1,13 +1,24 @@
-import React from "react";
+import React, { useState, useContext } from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import {
-  getCurrentMonthName,
+  getMonthName,
   getDatesToDisplay,
   getDayName,
-  formatDate
+  getMonth,
+  formatDate,
+  isInMonth,
+  isToday,
+  incrementMonth,
+  decrementMonth
 } from "Calendar.service";
+
+const MonthContext = React.createContext<{ month: Date }>({
+  month: new Date()
+});
+
+const MonthContextProvider = MonthContext.Provider;
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -69,10 +80,19 @@ export const DayContent = ({
   displayDayName: boolean;
   position: number;
 }) => {
+  const monthDisaplyed = useContext(MonthContext);
+  const style: React.CSSProperties = !isInMonth(
+    day,
+    getMonth(monthDisaplyed.month)
+  )
+    ? { color: "grey" }
+    : isToday(day)
+    ? { color: "blue" }
+    : {};
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div>{displayDayName ? getDayName(day) : ""}</div>
-      <div>{formatDate(day)}</div>
+      <div style={style}>{formatDate(day)}</div>
     </div>
   );
 };
@@ -101,12 +121,30 @@ export const Day = ({
 
 export const Calendar = () => {
   const classes = useStyles();
+  const [monthToDisplay, setMonthToDisplay] = useState(new Date());
+
+  const handleIncrement = () => {
+    setMonthToDisplay(monthDisplayed => {
+      return incrementMonth(monthDisplayed);
+    });
+  };
+  const handleDecrement = () => {
+    setMonthToDisplay(monthDisplayed => {
+      return decrementMonth(monthDisplayed);
+    });
+  };
   return (
     <>
-      <div style={{ textTransform: "capitalize" }}>{getCurrentMonthName()}</div>
-      <div className={classes.root}>
-        <Month dates={getDatesToDisplay()} />
-      </div>
+      <MonthContextProvider value={{ month: monthToDisplay }}>
+        <div onClick={handleDecrement}>moins</div>
+        <div style={{ textTransform: "capitalize" }}>
+          {getMonthName(monthToDisplay)}
+        </div>
+        <div onClick={handleIncrement}>plus</div>
+        <div className={classes.root}>
+          <Month dates={getDatesToDisplay(monthToDisplay)} />
+        </div>
+      </MonthContextProvider>
     </>
   );
 };
