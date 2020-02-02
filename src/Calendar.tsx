@@ -2,20 +2,12 @@ import React from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-
-const days = [
-  "lundi",
-  "mardi",
-  "mercredi",
-  "jeudi",
-  "venredi",
-  "samedi",
-  "dimanche"
-];
-
-const getDayName = (dayNumber: number) => {
-  return days[dayNumber];
-};
+import {
+  getCurrentMonthName,
+  getDatesToDisplay,
+  getDayName,
+  formatDate
+} from "Calendar.service";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -33,9 +25,9 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const Month = () => {
-  const weeks = Array.from(Array(5).keys()).map(week => {
-    return <Week key={week} position={week} />;
+export const Month = ({ dates }: { dates: Date[][] }) => {
+  const weeks = dates.map((week, idx) => {
+    return <Week key={idx} position={idx} week={week} />;
   });
   return (
     <Grid container spacing={0} direction={"column"} style={{ height: "100%" }}>
@@ -44,11 +36,17 @@ export const Month = () => {
   );
 };
 
-export const Week = ({ position }: { position: number }) => {
-  const days = Array.from(Array(7).keys()).map(day => {
+export const Week = ({
+  position,
+  week
+}: {
+  position: number;
+  week: Date[];
+}) => {
+  const days = week.map((day, idx) => {
     return (
       <Day
-        key={`${position}_${day}`}
+        key={`${position}_${idx}`}
         day={day}
         position={position}
         displayDayName={position === 0}
@@ -67,16 +65,14 @@ export const DayContent = ({
   displayDayName,
   position
 }: {
-  day: number;
+  day: Date;
   displayDayName: boolean;
   position: number;
 }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div>{displayDayName ? getDayName(day) : ""}</div>
-      <div>
-        {position} {day}
-      </div>
+      <div>{formatDate(day)}</div>
     </div>
   );
 };
@@ -87,7 +83,7 @@ export const Day = ({
   displayDayName
 }: {
   position: number;
-  day: number;
+  day: Date;
   displayDayName: boolean;
 }) => {
   return (
@@ -106,8 +102,11 @@ export const Day = ({
 export const Calendar = () => {
   const classes = useStyles();
   return (
-    <div className={classes.root}>
-      <Month />
-    </div>
+    <>
+      <div style={{ textTransform: "capitalize" }}>{getCurrentMonthName()}</div>
+      <div className={classes.root}>
+        <Month dates={getDatesToDisplay()} />
+      </div>
+    </>
   );
 };
