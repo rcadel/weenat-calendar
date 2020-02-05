@@ -14,11 +14,25 @@ import {
   decrementMonth
 } from "Calendar.service";
 
-const MonthContext = React.createContext<{ month: Date }>({
-  month: new Date()
+interface Event {
+  libelle: string;
+}
+
+interface Events {
+  [key: string]: Event;
+}
+
+interface Calendar {
+  month: Date;
+  events: Events;
+}
+
+const CalendarContext = React.createContext<Calendar>({
+  month: new Date(),
+  events: {}
 });
 
-const MonthContextProvider = MonthContext.Provider;
+const CalendarContextProvider = CalendarContext.Provider;
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -80,7 +94,7 @@ export const DayContent = ({
   displayDayName: boolean;
   position: number;
 }) => {
-  const monthDisaplyed = useContext(MonthContext);
+  const monthDisaplyed = useContext(CalendarContext);
   const style: React.CSSProperties = !isInMonth(
     day,
     getMonth(monthDisaplyed.month)
@@ -121,30 +135,39 @@ export const Day = ({
 
 export const Calendar = () => {
   const classes = useStyles();
-  const [monthToDisplay, setMonthToDisplay] = useState(new Date());
+  const [calendar, setCalendar] = useState<Calendar>({
+    month: new Date(),
+    events: {}
+  });
 
   const handleIncrement = () => {
-    setMonthToDisplay(monthDisplayed => {
-      return incrementMonth(monthDisplayed);
+    setCalendar(currentCalendar => {
+      return {
+        ...currentCalendar,
+        month: incrementMonth(currentCalendar.month)
+      };
     });
   };
   const handleDecrement = () => {
-    setMonthToDisplay(monthDisplayed => {
-      return decrementMonth(monthDisplayed);
+    setCalendar(currentCalendar => {
+      return {
+        ...currentCalendar,
+        month: decrementMonth(currentCalendar.month)
+      };
     });
   };
   return (
     <>
-      <MonthContextProvider value={{ month: monthToDisplay }}>
+      <CalendarContextProvider value={calendar}>
         <div onClick={handleDecrement}>moins</div>
         <div style={{ textTransform: "capitalize" }}>
-          {getMonthName(monthToDisplay)}
+          {getMonthName(calendar.month)}
         </div>
         <div onClick={handleIncrement}>plus</div>
         <div className={classes.root}>
-          <Month dates={getDatesToDisplay(monthToDisplay)} />
+          <Month dates={getDatesToDisplay(calendar.month)} />
         </div>
-      </MonthContextProvider>
+      </CalendarContextProvider>
     </>
   );
 };
