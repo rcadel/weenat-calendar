@@ -49,7 +49,7 @@ const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
  * transform date to key inside calendar events map
  * @param date
  */
-const getKey = (date: Date) => {
+export const getKey = (date: Date) => {
   return formatDate(date, DATE_TO_KEY_PATTERN);
 };
 
