@@ -176,6 +176,9 @@ export const CalendarContext = React.createContext<{
 
 export const CalendarContextProvider = CalendarContext.Provider;
 
+/**
+ * this hook use useRecucer with calendar action
+ */
 export const useCalendarReducer = () => {
   return useReducer(calendarReducer, initialState);
 };
