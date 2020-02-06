@@ -8,14 +8,10 @@ import {
 } from "@material-ui/pickers";
 import { TextField, Button } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+import { Event } from "./Calendar";
 
 const DATE_FORMAT = "dd/MM/yyyy";
 
-interface EventForm {
-  startDate: Date;
-  endDate: Date;
-  name: string;
-}
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -41,17 +37,27 @@ export const AddEventForm = forwardRef(
   (
     {
       onAdd,
-      defaultDate
+      defaultDate,
+      defaultEvent
     }: {
-      onAdd: (event: EventForm) => void;
+      onAdd: (event: Event) => void;
       defaultDate: Date;
+      defaultEvent?: Event;
     },
     ref
   ) => {
     const classes = useStyles();
-    const [startDate, setStartDate] = useState(defaultDate);
-    const [endDate, setEndDate] = useState(defaultDate);
-    const [name, setName] = useState("");
+    const defaultStartDate =
+      typeof defaultEvent !== "undefined"
+        ? defaultEvent.startDate
+        : defaultDate;
+    const defaultEndDate =
+      typeof defaultEvent !== "undefined" ? defaultEvent.endDate : defaultDate;
+    const defaultName =
+      typeof defaultEvent !== "undefined" ? defaultEvent.name : "";
+    const [startDate, setStartDate] = useState(defaultStartDate);
+    const [endDate, setEndDate] = useState(defaultEndDate);
+    const [name, setName] = useState(defaultName);
     const nameRef = useRef<HTMLInputElement>();
     useEffect(() => {
       if (
@@ -80,16 +86,19 @@ export const AddEventForm = forwardRef(
     };
 
     const handleAddClick = () => {
-      const eventForm: EventForm = {
+      const id = typeof defaultEvent !== "undefined" ? defaultEvent.id : "";
+      const eventForm: Event = {
         startDate,
         endDate,
-        name
+        name,
+        id
       };
       onAdd(eventForm);
     };
+    const action = typeof defaultEvent !== "undefined" ? "Editer" : "Ajouter";
     return (
       <Paper innerRef={ref} className={classes.paper}>
-        <h2>Ajouter un événement</h2>
+        <h2>{action} un événement</h2>
 
         <div
           style={{
@@ -177,7 +186,7 @@ export const AddEventForm = forwardRef(
           }}
         >
           <Button variant="contained" color="primary" onClick={handleAddClick}>
-            Ajouter
+            {action}
           </Button>
         </div>
       </Paper>

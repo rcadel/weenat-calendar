@@ -5,7 +5,6 @@ import Slide from "@material-ui/core/Slide";
 import Modal from "@material-ui/core/Modal";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
-import DeleteIcon from "@material-ui/icons/Delete";
 import Backdrop from "@material-ui/core/Backdrop";
 import uuid from "uuid/v4";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
@@ -31,10 +30,17 @@ const getKey = (date: Date) => {
 
 type Action =
   | { type: "addEvent"; startDate: Date; endDate: Date; name: string }
+  | {
+      type: "editEvent";
+      startDate: Date;
+      endDate: Date;
+      name: string;
+      id: string;
+    }
   | { type: "deleteEvent"; date: Date; id: string }
   | { type: "incrementMonth" }
   | { type: "decrementMonth" }
-  | { type: "displayAddEventForm"; date: Date }
+  | { type: "displayAddEventForm"; date: Date; id?: string }
   | { type: "hideAddEventForm" }
   | { type: "display" };
 
@@ -59,6 +65,22 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
         eventsPerDate: {
           ...state.eventsPerDate,
           [getKey(action.startDate)]: withNewEvent
+        }
+      };
+    case "editEvent":
+      currentEventsAtDate = eventsPerDate[getKey(action.startDate)] || [];
+      const withEditedEvent: Event[] = [
+        ...currentEventsAtDate.filter(event => {
+          return event.id !== action.id;
+        }),
+        { ...action }
+      ];
+
+      return {
+        ...state,
+        eventsPerDate: {
+          ...state.eventsPerDate,
+          [getKey(action.startDate)]: withEditedEvent
         }
       };
     case "deleteEvent":
@@ -91,10 +113,17 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
         display: false
       };
     case "displayAddEventForm":
+      let editingEvent;
+      if (typeof action.id !== "undefined") {
+        editingEvent = state.eventsPerDate[getKey(action.date)].find(evt => {
+          return evt.id === action.id;
+        });
+      }
       return {
         ...state,
         displayAddEventForm: true,
-        defaultDateAddEventForm: action.date
+        defaultDateAddEventForm: action.date,
+        editingEvent
       };
     case "hideAddEventForm":
       return { ...state, displayAddEventForm: false };
@@ -103,7 +132,7 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
   }
 }
 
-interface Event {
+export interface Event {
   name: string;
   startDate: Date;
   endDate: Date;
@@ -121,6 +150,7 @@ interface Calendar {
   displayAddEventForm: boolean;
   defaultDateAddEventForm: Date;
   display: boolean;
+  editingEvent?: Event;
 }
 
 const initialState: Calendar = {
@@ -129,7 +159,8 @@ const initialState: Calendar = {
   eventsPerDate: {},
   displayAddEventForm: false,
   defaultDateAddEventForm: new Date(),
-  display: true
+  display: true,
+  editingEvent: undefined
 };
 
 const CalendarContext = React.createContext<{
@@ -208,23 +239,37 @@ export const Week = ({
 
 const CalendarEvent = ({
   onDelete,
+  onClick,
   name,
   startDate,
   endDate
 }: {
   onDelete: () => void;
+  onClick: () => void;
 } & Event) => {
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onDelete();
   };
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
   const formatHour = "HH:mm";
   const label = `${name} ${formatDate(startDate, formatHour)}-${formatDate(
     endDate,
     formatHour
   )}`;
-  return <Chip label={label} color="primary" onDelete={handleDelete} />;
+  return (
+    <Chip
+      onClick={handleClick}
+      label={label}
+      color="primary"
+      onDelete={handleDelete}
+    />
+  );
 };
 
 export const DayContent = ({
@@ -247,6 +292,9 @@ export const DayContent = ({
   const deleteEvent = (id: string) => {
     calendar.dispatch({ type: "deleteEvent", date: day, id });
   };
+  const editEvent = (id: string) => {
+    calendar.dispatch({ type: "displayAddEventForm", date: day, id });
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div>{displayDayName ? getDayName(day) : ""}</div>
@@ -258,6 +306,7 @@ export const DayContent = ({
               key={event.id}
               {...event}
               onDelete={deleteEvent.bind(undefined, event.id)}
+              onClick={editEvent.bind(undefined, event.id)}
             />
           );
         })}
@@ -361,10 +410,15 @@ export const Calendar = () => {
             <Fade in={calendar.displayAddEventForm}>
               <AddEventForm
                 onAdd={event => {
-                  dispatch({ type: "addEvent", ...event });
+                  if (event.id === "") {
+                    dispatch({ type: "addEvent", ...event });
+                  } else {
+                    dispatch({ type: "editEvent", ...event });
+                  }
                   dispatch({ type: "hideAddEventForm" });
                 }}
                 defaultDate={calendar.defaultDateAddEventForm}
+                defaultEvent={calendar.editingEvent}
               />
             </Fade>
           </Modal>
