@@ -59,9 +59,15 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
         }
       };
     case "decrementMonth":
-      return { ...state, month: decrementMonth(state.month) };
+      const month = decrementMonth(state.month);
+      return { ...state, month, datesToDisplay: getDatesToDisplay(month) };
     case "incrementMonth":
-      return { ...state, month: incrementMonth(state.month) };
+      const newMonth = incrementMonth(state.month);
+      return {
+        ...state,
+        month: newMonth,
+        datesToDisplay: getDatesToDisplay(newMonth)
+      };
   }
 }
 
@@ -76,17 +82,21 @@ interface Events {
 
 interface Calendar {
   month: Date;
+  datesToDisplay: Date[][];
   eventsPerDate: Events;
 }
+
+const initialState = {
+  datesToDisplay: getDatesToDisplay(new Date()),
+  month: new Date(),
+  eventsPerDate: {}
+};
 
 const CalendarContext = React.createContext<{
   state: Calendar;
   dispatch?: React.Dispatch<Action>;
 }>({
-  state: {
-    month: new Date(),
-    eventsPerDate: {}
-  }
+  state: initialState
 });
 
 const CalendarContextProvider = CalendarContext.Provider;
@@ -107,7 +117,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const Month = ({ dates }: { dates: Date[][] }) => {
+export const Month = React.memo(({ dates }: { dates: Date[][] }) => {
   const weeks = dates.map((week, idx) => {
     return <Week key={idx} position={idx} week={week} />;
   });
@@ -116,7 +126,7 @@ export const Month = ({ dates }: { dates: Date[][] }) => {
       {weeks}
     </Grid>
   );
-};
+});
 
 export const Week = ({
   position,
@@ -235,10 +245,7 @@ export const Day = ({
 
 export const Calendar = () => {
   const classes = useStyles();
-  const [calendar, dispatch] = useReducer(calendarReducer, {
-    month: new Date(),
-    eventsPerDate: {}
-  });
+  const [calendar, dispatch] = useReducer(calendarReducer, initialState);
 
   const handleIncrement = () => {
     dispatch({ type: "incrementMonth" });
@@ -255,7 +262,7 @@ export const Calendar = () => {
         </div>
         <div onClick={handleIncrement}>plus</div>
         <div className={classes.root}>
-          <Month dates={getDatesToDisplay(calendar.month)} />
+          <Month dates={calendar.datesToDisplay} />
         </div>
       </CalendarContextProvider>
     </>
