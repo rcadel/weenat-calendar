@@ -1,4 +1,4 @@
-import React, { useContext, useReducer, useState } from "react";
+import React, { useContext, useReducer } from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Slide from "@material-ui/core/Slide";
@@ -32,7 +32,8 @@ type Action =
   | { type: "incrementMonth" }
   | { type: "decrementMonth" }
   | { type: "displayAddEventForm"; date: Date }
-  | { type: "hideAddEventForm" };
+  | { type: "hideAddEventForm" }
+  | { type: "display" };
 
 function calendarReducer(state: Calendar, action: Action): Calendar {
   const eventsPerDate = { ...state.eventsPerDate };
@@ -72,13 +73,19 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
       };
     case "decrementMonth":
       const month = decrementMonth(state.month);
-      return { ...state, month, datesToDisplay: getDatesToDisplay(month) };
+      return {
+        ...state,
+        month,
+        datesToDisplay: getDatesToDisplay(month),
+        display: false
+      };
     case "incrementMonth":
       const newMonth = incrementMonth(state.month);
       return {
         ...state,
         month: newMonth,
-        datesToDisplay: getDatesToDisplay(newMonth)
+        datesToDisplay: getDatesToDisplay(newMonth),
+        display: false
       };
     case "displayAddEventForm":
       return {
@@ -88,6 +95,8 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
       };
     case "hideAddEventForm":
       return { ...state, displayAddEventForm: false };
+    case "display":
+      return { ...state, display: true };
   }
 }
 
@@ -108,6 +117,7 @@ interface Calendar {
   eventsPerDate: Events;
   displayAddEventForm: boolean;
   defaultDateAddEventForm: Date;
+  display: boolean;
 }
 
 const initialState: Calendar = {
@@ -115,14 +125,16 @@ const initialState: Calendar = {
   month: new Date(),
   eventsPerDate: {},
   displayAddEventForm: false,
-  defaultDateAddEventForm: new Date()
+  defaultDateAddEventForm: new Date(),
+  display: true
 };
 
 const CalendarContext = React.createContext<{
   state: Calendar;
-  dispatch?: React.Dispatch<Action>;
+  dispatch: React.Dispatch<Action>;
 }>({
-  state: initialState
+  state: initialState,
+  dispatch: () => {}
 });
 
 const CalendarContextProvider = CalendarContext.Provider;
@@ -232,9 +244,7 @@ export const DayContent = ({
     ? { color: "blue" }
     : {};
   const deleteEvent = (id: string) => {
-    if (typeof calendar.dispatch !== "undefined") {
-      calendar.dispatch({ type: "deleteEvent", date: day, id });
-    }
+    calendar.dispatch({ type: "deleteEvent", date: day, id });
   };
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -264,9 +274,7 @@ export const Day = ({
 }) => {
   const calendar = useContext(CalendarContext);
   const handleClick = () => {
-    if (typeof calendar.dispatch !== "undefined") {
-      calendar.dispatch({ type: "displayAddEventForm", date: day });
-    }
+    calendar.dispatch({ type: "displayAddEventForm", date: day });
   };
   return (
     <Grid item xs>
@@ -283,19 +291,28 @@ export const Day = ({
   );
 };
 
-export const Calendar = () => {
-  const classes = useStyles();
-  const [display, setTest] = useState(true);
-  const [calendar, dispatch] = useReducer(calendarReducer, initialState);
-
+export const CalendarHeader = () => {
+  const calendar = useContext(CalendarContext);
   const handleIncrement = () => {
-    dispatch({ type: "incrementMonth" });
-    setTest(false);
+    calendar.dispatch({ type: "incrementMonth" });
   };
   const handleDecrement = () => {
-    dispatch({ type: "decrementMonth" });
-    setTest(false);
+    calendar.dispatch({ type: "decrementMonth" });
   };
+  return (
+    <>
+      <div onClick={handleDecrement}>moins</div>
+      <div style={{ textTransform: "capitalize" }}>
+        {getMonthName(calendar.state.month, "MMMM yyyy")}
+      </div>
+      <div onClick={handleIncrement}>plus</div>
+    </>
+  );
+};
+
+export const Calendar = () => {
+  const classes = useStyles();
+  const [calendar, dispatch] = useReducer(calendarReducer, initialState);
 
   const handleClose = () => {
     dispatch({ type: "hideAddEventForm" });
@@ -304,17 +321,13 @@ export const Calendar = () => {
   return (
     <>
       <CalendarContextProvider value={{ state: calendar, dispatch }}>
-        <div onClick={handleDecrement}>moins</div>
-        <div style={{ textTransform: "capitalize" }}>
-          {getMonthName(calendar.month, "MMMM yyyy")}
-        </div>
-        <div onClick={handleIncrement}>plus</div>
+        <CalendarHeader />
         <div className={classes.root}>
           <Slide
-            direction={display ? "left" : "right"}
-            in={display}
+            direction={calendar.display ? "left" : "right"}
+            in={calendar.display}
             onExited={() => {
-              setTest(true);
+              dispatch({ type: "display" });
             }}
           >
             <Month dates={calendar.datesToDisplay} />
