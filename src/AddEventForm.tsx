@@ -8,8 +8,8 @@ import {
 } from "@material-ui/pickers";
 import { TextField, Button } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-import { Event } from "./Calendar";
 import { addHours } from "./Calendar.service";
+import { Event } from "Calendar.reducer";
 
 const DATE_FORMAT = "dd/MM/yyyy";
 
