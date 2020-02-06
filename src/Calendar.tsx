@@ -20,7 +20,7 @@ import {
   decrementMonth,
   setCurrentHour
 } from "Calendar.service";
-import { Fade, Chip } from "@material-ui/core";
+import { Fade, Chip, Typography } from "@material-ui/core";
 import { AddEventForm } from "AddEventForm";
 
 const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
@@ -366,9 +366,13 @@ export const CalendarHeader = () => {
         onClick={handleDecrement}
         style={{ cursor: "pointer" }}
       />
-      <div style={{ textTransform: "capitalize" }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        style={{ textTransform: "capitalize" }}
+      >
         {getMonthName(calendar.state.month, "MMMM yyyy")}
-      </div>
+      </Typography>
       <ChevronRightIcon
         onClick={handleIncrement}
         style={{ cursor: "pointer" }}
