@@ -2,6 +2,8 @@ import React, { useContext, useReducer, useState } from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Slide from "@material-ui/core/Slide";
+import Modal from "@material-ui/core/Modal";
+import Backdrop from "@material-ui/core/Backdrop";
 import uuid from "uuid/v4";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import {
@@ -15,6 +17,8 @@ import {
   incrementMonth,
   decrementMonth
 } from "Calendar.service";
+import { Fade } from "@material-ui/core";
+import { AddEventForm } from "AddEventForm";
 
 const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
 
@@ -23,27 +27,34 @@ const getKey = (date: Date) => {
 };
 
 type Action =
-  | { type: "addEvent"; date: Date; label: string }
+  | { type: "addEvent"; startDate: Date; endDate: Date; name: string }
   | { type: "deleteEvent"; date: Date; id: string }
   | { type: "incrementMonth" }
-  | { type: "decrementMonth" };
+  | { type: "decrementMonth" }
+  | { type: "displayAddEventForm"; date: Date }
+  | { type: "hideAddEventForm" };
 
 function calendarReducer(state: Calendar, action: Action): Calendar {
   const eventsPerDate = { ...state.eventsPerDate };
   let currentEventsAtDate;
   switch (action.type) {
     case "addEvent":
-      currentEventsAtDate = eventsPerDate[getKey(action.date)] || [];
+      currentEventsAtDate = eventsPerDate[getKey(action.startDate)] || [];
       const withNewEvent: Event[] = [
         ...currentEventsAtDate,
-        { libelle: action.label, id: uuid() }
+        {
+          name: action.name,
+          id: uuid(),
+          startDate: action.startDate,
+          endDate: action.endDate
+        }
       ];
 
       return {
         ...state,
         eventsPerDate: {
           ...state.eventsPerDate,
-          [getKey(action.date)]: withNewEvent
+          [getKey(action.startDate)]: withNewEvent
         }
       };
     case "deleteEvent":
@@ -69,11 +80,21 @@ function calendarReducer(state: Calendar, action: Action): Calendar {
         month: newMonth,
         datesToDisplay: getDatesToDisplay(newMonth)
       };
+    case "displayAddEventForm":
+      return {
+        ...state,
+        displayAddEventForm: true,
+        defaultDateAddEventForm: action.date
+      };
+    case "hideAddEventForm":
+      return { ...state, displayAddEventForm: false };
   }
 }
 
 interface Event {
-  libelle: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
   id: string;
 }
 
@@ -85,12 +106,16 @@ interface Calendar {
   month: Date;
   datesToDisplay: Date[][];
   eventsPerDate: Events;
+  displayAddEventForm: boolean;
+  defaultDateAddEventForm: Date;
 }
 
-const initialState = {
+const initialState: Calendar = {
   datesToDisplay: getDatesToDisplay(new Date()),
   month: new Date(),
-  eventsPerDate: {}
+  eventsPerDate: {},
+  displayAddEventForm: false,
+  defaultDateAddEventForm: new Date()
 };
 
 const CalendarContext = React.createContext<{
@@ -110,10 +135,16 @@ const useStyles = makeStyles((theme: Theme) =>
       width: "80vw",
       margin: "auto"
     },
+    modal: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    },
     paper: {
-      padding: theme.spacing(0),
-      textAlign: "center",
-      color: theme.palette.text.secondary
+      backgroundColor: theme.palette.background.paper,
+      border: "2px solid #000",
+      boxShadow: theme.shadows[5],
+      padding: theme.spacing(2, 4, 3)
     }
   })
 );
@@ -214,7 +245,7 @@ export const DayContent = ({
           return (
             <CalendarEvent
               key={event.id}
-              label={event.libelle}
+              label={event.name}
               onDelete={deleteEvent.bind(undefined, event.id)}
             />
           );
@@ -234,7 +265,7 @@ export const Day = ({
   const calendar = useContext(CalendarContext);
   const handleClick = () => {
     if (typeof calendar.dispatch !== "undefined") {
-      calendar.dispatch({ type: "addEvent", date: day, label: "event" });
+      calendar.dispatch({ type: "displayAddEventForm", date: day });
     }
   };
   return (
@@ -266,6 +297,10 @@ export const Calendar = () => {
     setTest(false);
   };
 
+  const handleClose = () => {
+    dispatch({ type: "hideAddEventForm" });
+  };
+
   return (
     <>
       <CalendarContextProvider value={{ state: calendar, dispatch }}>
@@ -284,6 +319,28 @@ export const Calendar = () => {
           >
             <Month dates={calendar.datesToDisplay} />
           </Slide>
+          <Modal
+            aria-labelledby="transition-modal-title"
+            aria-describedby="transition-modal-description"
+            open={calendar.displayAddEventForm}
+            className={classes.modal}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{
+              timeout: 500
+            }}
+            onClose={handleClose}
+          >
+            <Fade in={calendar.displayAddEventForm}>
+              <AddEventForm
+                onAdd={event => {
+                  dispatch({ type: "addEvent", ...event });
+                  dispatch({ type: "hideAddEventForm" });
+                }}
+                defaultDate={calendar.defaultDateAddEventForm}
+              />
+            </Fade>
+          </Modal>
         </div>
       </CalendarContextProvider>
     </>
