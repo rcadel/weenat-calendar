@@ -20,7 +20,8 @@ export type Action =
   | { type: "incrementMonth" }
   | { type: "decrementMonth" }
   | { type: "displayAddEventForm"; date: Date; id?: string }
-  | { type: "hideAddEventForm" };
+  | { type: "hideAddEventForm" }
+  | { type: "goToday" };
 
 export interface Events {
   [key: string]: Event[];
@@ -129,6 +130,12 @@ export function calendarReducer(state: Calendar, action: Action): Calendar {
       };
     case "hideAddEventForm":
       return { ...state, displayAddEventForm: false };
+    case "goToday":
+      return {
+        ...state,
+        month: new Date(),
+        datesToDisplay: getDatesToDisplay(new Date())
+      };
   }
 }
 

@@ -16,6 +16,7 @@ import {
   CalendarContextProvider
 } from "Calendar.reducer";
 import { Day } from "Day";
+import { Button } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -92,21 +93,40 @@ export const CalendarHeader = () => {
         margin: "10px"
       }}
     >
-      <ChevronLeftIcon
-        onClick={handleDecrement}
-        style={{ cursor: "pointer" }}
-      />
-      <Typography
-        variant="h4"
-        gutterBottom
-        style={{ textTransform: "capitalize", width: "20%" }}
+      <div
+        style={{
+          width: "90%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}
       >
-        {getMonthName(calendar.state.month, "MMMM yyyy")}
-      </Typography>
-      <ChevronRightIcon
-        onClick={handleIncrement}
-        style={{ cursor: "pointer" }}
-      />
+        <ChevronLeftIcon
+          onClick={handleDecrement}
+          style={{ cursor: "pointer" }}
+        />
+        <Typography
+          variant="h4"
+          gutterBottom
+          style={{ textTransform: "capitalize", width: "20%" }}
+        >
+          {getMonthName(calendar.state.month, "MMMM yyyy")}
+        </Typography>
+        <ChevronRightIcon
+          onClick={handleIncrement}
+          style={{ cursor: "pointer" }}
+        />
+      </div>
+      <Button
+        color="primary"
+        variant="contained"
+        style={{ marginLeft: "auto" }}
+        onClick={() => {
+          calendar.dispatch({ type: "goToday" });
+        }}
+      >
+        Aujourd'hui
+      </Button>
     </div>
   );
 };
@@ -122,8 +142,8 @@ export const MainCalendar = () => {
   return (
     <>
       <CalendarContextProvider value={{ state: calendar, dispatch }}>
-        <CalendarHeader />
         <div className={classes.root}>
+          <CalendarHeader />
           <Month dates={calendar.datesToDisplay} />
           <Modal
             aria-labelledby="transition-modal-title"
