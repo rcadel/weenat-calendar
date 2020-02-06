@@ -1,6 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useContext, useReducer } from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
+import uuid from "uuid/v4";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import {
   getMonthName,
@@ -14,22 +15,78 @@ import {
   decrementMonth
 } from "Calendar.service";
 
+const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
+
+const getKey = (date: Date) => {
+  return formatDate(date, DATE_TO_KEY_PATTERN);
+};
+
+type Action =
+  | { type: "addEvent"; date: Date; label: string }
+  | { type: "deleteEvent"; date: Date; id: string }
+  | { type: "incrementMonth" }
+  | { type: "decrementMonth" };
+
+function calendarReducer(state: Calendar, action: Action): Calendar {
+  const eventsPerDate = { ...state.eventsPerDate };
+  let currentEventsAtDate;
+  switch (action.type) {
+    case "addEvent":
+      currentEventsAtDate = eventsPerDate[getKey(action.date)] || [];
+      const withNewEvent: Event[] = [
+        ...currentEventsAtDate,
+        { libelle: action.label, id: uuid() }
+      ];
+
+      return {
+        ...state,
+        eventsPerDate: {
+          ...state.eventsPerDate,
+          [getKey(action.date)]: withNewEvent
+        }
+      };
+    case "deleteEvent":
+      currentEventsAtDate = eventsPerDate[getKey(action.date)] || [];
+      const withoudDeletedEvent: Event[] = currentEventsAtDate.filter(event => {
+        return event.id !== action.id;
+      });
+
+      return {
+        ...state,
+        eventsPerDate: {
+          ...state.eventsPerDate,
+          [getKey(action.date)]: withoudDeletedEvent
+        }
+      };
+    case "decrementMonth":
+      return { ...state, month: decrementMonth(state.month) };
+    case "incrementMonth":
+      return { ...state, month: incrementMonth(state.month) };
+  }
+}
+
 interface Event {
   libelle: string;
+  id: string;
 }
 
 interface Events {
-  [key: string]: Event;
+  [key: string]: Event[];
 }
 
 interface Calendar {
   month: Date;
-  events: Events;
+  eventsPerDate: Events;
 }
 
-const CalendarContext = React.createContext<Calendar>({
-  month: new Date(),
-  events: {}
+const CalendarContext = React.createContext<{
+  state: Calendar;
+  dispatch?: React.Dispatch<Action>;
+}>({
+  state: {
+    month: new Date(),
+    eventsPerDate: {}
+  }
 });
 
 const CalendarContextProvider = CalendarContext.Provider;
@@ -73,7 +130,6 @@ export const Week = ({
       <Day
         key={`${position}_${idx}`}
         day={day}
-        position={position}
         displayDayName={position === 0}
       />
     );
@@ -85,49 +141,93 @@ export const Week = ({
   );
 };
 
+const CalendarEvent = ({
+  label,
+  onDelete
+}: {
+  label: string;
+  onDelete: () => void;
+}) => {
+  return (
+    <div>
+      {label}{" "}
+      <span
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        delete
+      </span>
+    </div>
+  );
+};
+
 export const DayContent = ({
   day,
-  displayDayName,
-  position
+  displayDayName
 }: {
   day: Date;
   displayDayName: boolean;
-  position: number;
 }) => {
-  const monthDisaplyed = useContext(CalendarContext);
+  const calendar = useContext(CalendarContext);
+  const eventsAtDate = calendar.state.eventsPerDate[getKey(day)] || [];
   const style: React.CSSProperties = !isInMonth(
     day,
-    getMonth(monthDisaplyed.month)
+    getMonth(calendar.state.month)
   )
     ? { color: "grey" }
     : isToday(day)
     ? { color: "blue" }
     : {};
+  const deleteEvent = (id: string) => {
+    if (typeof calendar.dispatch !== "undefined") {
+      calendar.dispatch({ type: "deleteEvent", date: day, id });
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div>{displayDayName ? getDayName(day) : ""}</div>
       <div style={style}>{formatDate(day)}</div>
+      <div>
+        {eventsAtDate.map(event => {
+          return (
+            <CalendarEvent
+              key={event.id}
+              label={event.libelle}
+              onDelete={deleteEvent.bind(undefined, event.id)}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 };
 
 export const Day = ({
-  position,
   day,
   displayDayName
 }: {
-  position: number;
   day: Date;
   displayDayName: boolean;
 }) => {
+  const calendar = useContext(CalendarContext);
+  const handleClick = () => {
+    if (typeof calendar.dispatch !== "undefined") {
+      calendar.dispatch({ type: "addEvent", date: day, label: "event" });
+    }
+  };
   return (
     <Grid item xs>
-      <Paper variant="outlined" square elevation={0} style={{ height: "100%" }}>
-        <DayContent
-          position={position}
-          day={day}
-          displayDayName={displayDayName}
-        />
+      <Paper
+        variant="outlined"
+        square
+        elevation={0}
+        style={{ height: "100%" }}
+        onClick={handleClick}
+      >
+        <DayContent day={day} displayDayName={displayDayName} />
       </Paper>
     </Grid>
   );
@@ -135,30 +235,20 @@ export const Day = ({
 
 export const Calendar = () => {
   const classes = useStyles();
-  const [calendar, setCalendar] = useState<Calendar>({
+  const [calendar, dispatch] = useReducer(calendarReducer, {
     month: new Date(),
-    events: {}
+    eventsPerDate: {}
   });
 
   const handleIncrement = () => {
-    setCalendar(currentCalendar => {
-      return {
-        ...currentCalendar,
-        month: incrementMonth(currentCalendar.month)
-      };
-    });
+    dispatch({ type: "incrementMonth" });
   };
   const handleDecrement = () => {
-    setCalendar(currentCalendar => {
-      return {
-        ...currentCalendar,
-        month: decrementMonth(currentCalendar.month)
-      };
-    });
+    dispatch({ type: "decrementMonth" });
   };
   return (
     <>
-      <CalendarContextProvider value={calendar}>
+      <CalendarContextProvider value={{ state: calendar, dispatch }}>
         <div onClick={handleDecrement}>moins</div>
         <div style={{ textTransform: "capitalize" }}>
           {getMonthName(calendar.month)}
