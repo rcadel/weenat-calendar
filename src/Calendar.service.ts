@@ -6,7 +6,9 @@ import {
   set,
   getMonth as dateFnsGetMonth,
   isToday as dateFnsIsToday,
-  getYear
+  getYear,
+  getDate,
+  getHours
 } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -43,6 +45,22 @@ export const incrementMonth = (month: Date) => {
 
 export const decrementMonth = (month: Date) => {
   return add(month, { months: -1 });
+};
+
+export const setCurrentHour = (date: Date, offset: number = 0) => {
+  return set(new Date(), {
+    month: dateFnsGetMonth(date),
+    year: getYear(date),
+    milliseconds: 0,
+    seconds: 0,
+    date: getDate(date),
+    hours: getHours(new Date()) + offset,
+    minutes: 0
+  });
+};
+
+export const addHours = (date: Date, offset: number) => {
+  return add(date, { hours: offset });
 };
 
 /**

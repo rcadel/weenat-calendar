@@ -17,7 +17,8 @@ import {
   isInMonth,
   isToday,
   incrementMonth,
-  decrementMonth
+  decrementMonth,
+  setCurrentHour
 } from "Calendar.service";
 import { Fade, Chip } from "@material-ui/core";
 import { AddEventForm } from "AddEventForm";
@@ -324,7 +325,10 @@ export const Day = ({
 }) => {
   const calendar = useContext(CalendarContext);
   const handleClick = () => {
-    calendar.dispatch({ type: "displayAddEventForm", date: day });
+    calendar.dispatch({
+      type: "displayAddEventForm",
+      date: setCurrentHour(day)
+    });
   };
   return (
     <Grid item xs>

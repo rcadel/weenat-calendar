@@ -9,6 +9,7 @@ import {
 import { TextField, Button } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import { Event } from "./Calendar";
+import { addHours } from "./Calendar.service";
 
 const DATE_FORMAT = "dd/MM/yyyy";
 
@@ -52,7 +53,9 @@ export const AddEventForm = forwardRef(
         ? defaultEvent.startDate
         : defaultDate;
     const defaultEndDate =
-      typeof defaultEvent !== "undefined" ? defaultEvent.endDate : defaultDate;
+      typeof defaultEvent !== "undefined"
+        ? defaultEvent.endDate
+        : addHours(defaultDate, 1);
     const defaultName =
       typeof defaultEvent !== "undefined" ? defaultEvent.name : "";
     const [startDate, setStartDate] = useState(defaultStartDate);
