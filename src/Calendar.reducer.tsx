@@ -5,7 +5,7 @@ import {
   incrementMonth
 } from "Calendar.service";
 import uuid from "uuid/v4";
-import React from "react";
+import React, { useReducer } from "react";
 
 export type Action =
   | { type: "addEvent"; startDate: Date; endDate: Date; name: string }
@@ -45,10 +45,28 @@ export interface Event {
 
 const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
 
-export const getKey = (date: Date) => {
+/**
+ * transform date to key inside calendar events map
+ * @param date
+ */
+const getKey = (date: Date) => {
   return formatDate(date, DATE_TO_KEY_PATTERN);
 };
 
+/**
+ * return events at specific date or empty array
+ * @param calendarToUse
+ * @param date
+ */
+export const getEventsAtDate = (calendarToUse: Calendar, date: Date) => {
+  return calendarToUse.eventsPerDate[getKey(date)] || [];
+};
+
+/**
+ * reducer use to handle UI state machine
+ * @param state ui state
+ * @param action action to modify UI
+ */
 export function calendarReducer(state: Calendar, action: Action): Calendar {
   const eventsPerDate = { ...state.eventsPerDate };
   let currentEventsAtDate;
@@ -157,3 +175,7 @@ export const CalendarContext = React.createContext<{
 });
 
 export const CalendarContextProvider = CalendarContext.Provider;
+
+export const useCalendarReducer = () => {
+  return useReducer(calendarReducer, initialState);
+};

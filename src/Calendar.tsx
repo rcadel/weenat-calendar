@@ -1,4 +1,4 @@
-import React, { useContext, useReducer } from "react";
+import React, { useContext } from "react";
 import Grid from "@material-ui/core/Grid";
 import Modal from "@material-ui/core/Modal";
 import Fade from "@material-ui/core/Fade";
@@ -10,10 +10,9 @@ import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import { getMonthName } from "Calendar.service";
 import { AddEventForm } from "AddEventForm";
 import {
-  calendarReducer,
-  initialState,
   CalendarContext,
-  CalendarContextProvider
+  CalendarContextProvider,
+  useCalendarReducer
 } from "Calendar.reducer";
 import { Day } from "Day";
 import { Button } from "@material-ui/core";
@@ -133,7 +132,7 @@ export const CalendarHeader = () => {
 
 export const MainCalendar = () => {
   const classes = useStyles();
-  const [calendar, dispatch] = useReducer(calendarReducer, initialState);
+  const [calendar, dispatch] = useCalendarReducer();
 
   const handleClose = () => {
     dispatch({ type: "hideAddEventForm" });

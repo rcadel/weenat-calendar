@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { CalendarContext } from "./Calendar.reducer";
+import { CalendarContext, getEventsAtDate } from "./Calendar.reducer";
 import {
   setCurrentHour,
   isInMonth,
@@ -11,7 +11,7 @@ import {
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Chip from "@material-ui/core/Chip";
-import { Event, getKey } from "Calendar.reducer";
+import { Event } from "Calendar.reducer";
 
 export const Day = ({
   day,
@@ -50,7 +50,7 @@ const DayContent = ({
   displayDayName: boolean;
 }) => {
   const calendar = useContext(CalendarContext);
-  const eventsAtDate = calendar.state.eventsPerDate[getKey(day)] || [];
+  const eventsAtDate = getEventsAtDate(calendar.state, day);
   const style: React.CSSProperties = !isInMonth(
     day,
     getMonth(calendar.state.month)
