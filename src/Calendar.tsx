@@ -3,6 +3,9 @@ import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Slide from "@material-ui/core/Slide";
 import Modal from "@material-ui/core/Modal";
+import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
+import ChevronRightIcon from "@material-ui/icons/ChevronRight";
+import DeleteIcon from "@material-ui/icons/Delete";
 import Backdrop from "@material-ui/core/Backdrop";
 import uuid from "uuid/v4";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
@@ -17,7 +20,7 @@ import {
   incrementMonth,
   decrementMonth
 } from "Calendar.service";
-import { Fade } from "@material-ui/core";
+import { Fade, Chip } from "@material-ui/core";
 import { AddEventForm } from "AddEventForm";
 
 const DATE_TO_KEY_PATTERN = "dd-MM-yyyy";
@@ -204,26 +207,24 @@ export const Week = ({
 };
 
 const CalendarEvent = ({
-  label,
-  onDelete
+  onDelete,
+  name,
+  startDate,
+  endDate
 }: {
-  label: string;
   onDelete: () => void;
-}) => {
-  return (
-    <div>
-      {label}{" "}
-      <span
-        onClick={e => {
-          e.preventDefault();
-          e.stopPropagation();
-          onDelete();
-        }}
-      >
-        delete
-      </span>
-    </div>
-  );
+} & Event) => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete();
+  };
+  const formatHour = "HH:mm";
+  const label = `${name} ${formatDate(startDate, formatHour)}-${formatDate(
+    endDate,
+    formatHour
+  )}`;
+  return <Chip label={label} color="primary" onDelete={handleDelete} />;
 };
 
 export const DayContent = ({
@@ -255,7 +256,7 @@ export const DayContent = ({
           return (
             <CalendarEvent
               key={event.id}
-              label={event.name}
+              {...event}
               onDelete={deleteEvent.bind(undefined, event.id)}
             />
           );
@@ -300,13 +301,26 @@ export const CalendarHeader = () => {
     calendar.dispatch({ type: "decrementMonth" });
   };
   return (
-    <>
-      <div onClick={handleDecrement}>moins</div>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        margin: "10px"
+      }}
+    >
+      <ChevronLeftIcon
+        onClick={handleDecrement}
+        style={{ cursor: "pointer" }}
+      />
       <div style={{ textTransform: "capitalize" }}>
         {getMonthName(calendar.state.month, "MMMM yyyy")}
       </div>
-      <div onClick={handleIncrement}>plus</div>
-    </>
+      <ChevronRightIcon
+        onClick={handleIncrement}
+        style={{ cursor: "pointer" }}
+      />
+    </div>
   );
 };
 
