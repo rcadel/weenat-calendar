@@ -1,6 +1,7 @@
-import React, { useContext, useReducer } from "react";
+import React, { useContext, useReducer, useState } from "react";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
+import Slide from "@material-ui/core/Slide";
 import uuid from "uuid/v4";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import {
@@ -117,16 +118,24 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const Month = React.memo(({ dates }: { dates: Date[][] }) => {
-  const weeks = dates.map((week, idx) => {
-    return <Week key={idx} position={idx} week={week} />;
-  });
-  return (
-    <Grid container spacing={0} direction={"column"} style={{ height: "100%" }}>
-      {weeks}
-    </Grid>
-  );
-});
+export const Month = React.memo(
+  React.forwardRef(({ dates }: { dates: Date[][] }, ref) => {
+    const weeks = dates.map((week, idx) => {
+      return <Week key={idx} position={idx} week={week} />;
+    });
+    return (
+      <Grid
+        innerRef={ref}
+        container
+        spacing={0}
+        direction={"column"}
+        style={{ height: "100%" }}
+      >
+        {weeks}
+      </Grid>
+    );
+  })
+);
 
 export const Week = ({
   position,
@@ -245,14 +254,18 @@ export const Day = ({
 
 export const Calendar = () => {
   const classes = useStyles();
+  const [display, setTest] = useState(true);
   const [calendar, dispatch] = useReducer(calendarReducer, initialState);
 
   const handleIncrement = () => {
     dispatch({ type: "incrementMonth" });
+    setTest(false);
   };
   const handleDecrement = () => {
     dispatch({ type: "decrementMonth" });
+    setTest(false);
   };
+
   return (
     <>
       <CalendarContextProvider value={{ state: calendar, dispatch }}>
@@ -262,7 +275,15 @@ export const Calendar = () => {
         </div>
         <div onClick={handleIncrement}>plus</div>
         <div className={classes.root}>
-          <Month dates={calendar.datesToDisplay} />
+          <Slide
+            direction={display ? "left" : "right"}
+            in={display}
+            onExited={() => {
+              setTest(true);
+            }}
+          >
+            <Month dates={calendar.datesToDisplay} />
+          </Slide>
         </div>
       </CalendarContextProvider>
     </>
