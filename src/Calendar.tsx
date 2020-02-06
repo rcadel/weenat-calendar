@@ -306,7 +306,7 @@ export const Calendar = () => {
       <CalendarContextProvider value={{ state: calendar, dispatch }}>
         <div onClick={handleDecrement}>moins</div>
         <div style={{ textTransform: "capitalize" }}>
-          {getMonthName(calendar.month)}
+          {getMonthName(calendar.month, "MMMM yyyy")}
         </div>
         <div onClick={handleIncrement}>plus</div>
         <div className={classes.root}>
