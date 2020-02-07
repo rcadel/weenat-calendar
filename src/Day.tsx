@@ -28,7 +28,7 @@ export const Day = ({
     });
   };
   return (
-    <Grid item xs>
+    <Grid item xs style={{ flexBasis: "14%", maxWidth: "14%" }}>
       <Paper
         variant="outlined"
         square
@@ -66,22 +66,20 @@ const DayContent = ({
     calendar.dispatch({ type: "displayAddEventForm", date: day, id });
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div>{displayDayName ? getDayName(day) : ""}</div>
+    <>
+      {displayDayName ? <div> {getDayName(day)}</div> : ""}
       <div style={style}>{formatDate(day)}</div>
-      <div>
-        {eventsAtDate.map(event => {
-          return (
-            <CalendarEvent
-              key={event.id}
-              {...event}
-              onDelete={deleteEvent.bind(undefined, event.id)}
-              onClick={editEvent.bind(undefined, event.id)}
-            />
-          );
-        })}
-      </div>
-    </div>
+      {eventsAtDate.map(event => {
+        return (
+          <CalendarEvent
+            key={event.id}
+            {...event}
+            onDelete={deleteEvent.bind(undefined, event.id)}
+            onClick={editEvent.bind(undefined, event.id)}
+          />
+        );
+      })}
+    </>
   );
 };
 
@@ -106,14 +104,15 @@ const CalendarEvent = ({
     onClick();
   };
   const formatHour = "HH:mm";
-  const label = `${name} ${formatDate(startDate, formatHour)}-${formatDate(
+  const label = `${formatDate(startDate, formatHour)}-${formatDate(
     endDate,
     formatHour
-  )}`;
+  )} ${name}`;
   return (
     <Chip
-      style={{ margin: "0 0 10px 0" }}
+      style={{ width: "80%", margin: "0 0 10px 0" }}
       onClick={handleClick}
+      size="small"
       label={label}
       color="primary"
       onDelete={handleDelete}
